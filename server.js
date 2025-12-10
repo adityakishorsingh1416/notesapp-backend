@@ -21,12 +21,21 @@ app.use(cors({
   credentials: true
 }));
 
+app.set("trust proxy", 1);   // <--- ADD THIS
 
-app.use(session({
-  secret: "yourSecretKey123",
-  resave: false,
-  saveUninitialized: true
-}));
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "yourSecretKey123",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      sameSite: "none",
+      secure: true,
+      httpOnly: true
+    }
+  })
+);
+
 
 // Set EJS
 app.set("view engine", "ejs");
