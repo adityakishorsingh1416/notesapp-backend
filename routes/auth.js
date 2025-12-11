@@ -60,6 +60,14 @@ router.get("/success", (req, res) => {
   res.render("success", { username: req.session.user?.username });
 });
 
+router.get("/redirect", (req, res) => {
+  if (!req.session.user) {
+    return res.redirect("/login");
+  }
+  res.redirect("https://notesappbyadiiii.netlify.app/");
+});
+
+
 // LOGOUT
 router.get("/logout", (req, res) => {
   req.session.destroy(() => {
