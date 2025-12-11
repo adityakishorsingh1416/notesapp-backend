@@ -1,65 +1,55 @@
 const express = require("express");
-const router = express.Router();
 const Note = require("../models/Note");
+const router = express.Router();
 
-// ---------------- GET ALL NOTES ----------------
-router.get("/", async (req, res) => {
-  try {
-    const notes = await Note.find({});
-    res.json(notes);
-  } catch (err) {
-    res.status(500).json({ error: "Server error" });
+// Middleware to require login
+function requireLogin(req, res, next) {
+  if (!req.session.user) {
+    return res.status(401).json({ message: "Not logged in" });
   }
+  next();
+}
+
+// GET NOTES → only user's notes
+router.get("/", requireLogin, async (req, res) => {
+  const notes = await Note.find({ userId: req.session.user._id });
+  res.json(notes);
 });
 
-// ---------------- ADD NOTE ----------------
-router.post("/", async (req, res) => {
-  try {
-    const { heading, content } = req.body;
+// CREATE NOTE → attach userId
+router.post("/", requireLogin, async (req, res) => {
+  const { heading, content } = req.body;
 
-    const newNote = new Note({
-      heading,
-      content
-    });
+  const newNote = new Note({
+    heading,
+    content,
+    userId: req.session.user._id
+  });
 
-    await newNote.save();
-
-    res.json({ message: "Note added", newNote });
-  } catch (err) {
-    res.status(500).json({ error: "Error adding note" });
-  }
+  await newNote.save();
+  res.json({ newNote });
 });
 
-// ---------------- DELETE NOTE ----------------
-router.delete("/:id", async (req, res) => {
-  try {
-    const deletedNote = await Note.findByIdAndDelete(req.params.id);
+// UPDATE NOTE → only if note belongs to user
+router.put("/:id", requireLogin, async (req, res) => {
+  const { id } = req.params;
 
-    if (!deletedNote) {
-      return res.status(404).json({ error: "Note not found" });
-    }
+  const updatedNote = await Note.findOneAndUpdate(
+    { _id: id, userId: req.session.user._id },
+    req.body,
+    { new: true }
+  );
 
-    res.json({ message: "Note deleted", deletedNote });
-  } catch (err) {
-    res.status(500).json({ error: "Error deleting note" });
-  }
+  res.json({ updatedNote });
 });
 
-// ---------------- UPDATE NOTE ----------------
-router.put("/:id", async (req, res) => {
-  try {
-    const { heading, content } = req.body;
+// DELETE NOTE → only if note belongs to user
+router.delete("/:id", requireLogin, async (req, res) => {
+  const { id } = req.params;
 
-    const updatedNote = await Note.findByIdAndUpdate(
-      req.params.id,
-      { heading, content },
-      { new: true }
-    );
+  await Note.findOneAndDelete({ _id: id, userId: req.session.user._id });
 
-    res.json({ message: "Note updated", updatedNote });
-  } catch (err) {
-    res.status(500).json({ error: "Error updating note" });
-  }
+  res.json({ success: true });
 });
 
 module.exports = router;

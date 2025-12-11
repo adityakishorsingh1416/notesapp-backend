@@ -1,13 +1,13 @@
-// backend/models/Note.js
 const mongoose = require("mongoose");
 
-const NoteSchema = new mongoose.Schema({
+const noteSchema = new mongoose.Schema({
   heading: String,
   content: String,
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
+    ref: "User",
+    required: true
   }
-}, { timestamps: true });
+});
 
-module.exports = mongoose.model("Note", NoteSchema);
+module.exports = mongoose.model("Note", noteSchema);
